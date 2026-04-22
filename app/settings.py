@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
-import asyncio
 from pathlib import Path
 
-# === 引入所需库 ===
 from hcaptcha_challenger.agent import AgentConfig
 from pydantic import Field, SecretStr
 from pydantic_settings import SettingsConfigDict
-from loguru import logger
+
+from extensions.llm_adapter import apply_llm_patch
 
 # --- 核心路径定义 ---
 PROJECT_ROOT = Path(__file__).parent
@@ -24,25 +22,69 @@ HCAPTCHA_DIR = VOLUMES_DIR.joinpath("hcaptcha")
 class EpicSettings(AgentConfig):
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 
-    # [基础配置] AiHubMix 必须使用 SecretStr 类型
     GEMINI_API_KEY: SecretStr | None = Field(
-        default_factory=lambda: os.getenv("GEMINI_API_KEY"),
-        description="AiHubMix 的令牌",
+        default_factory=lambda: os.getenv("GEMINI_API_KEY") or os.getenv("GLM_API_KEY"),
+        description="Gemini/AiHubMix API key",
     )
-    
+
     GEMINI_BASE_URL: str = Field(
         default=os.getenv("GEMINI_BASE_URL", "https://aihubmix.com"),
-        description="中转地址",
+        description="Gemini/AiHubMix base URL",
     )
-    
+
     GEMINI_MODEL: str = Field(
         default=os.getenv("GEMINI_MODEL", "gemini-2.5-pro"),
-        description="模型名称",
+        description="Gemini default model",
+    )
+
+    LLM_PROVIDER: str = Field(
+        default=os.getenv("LLM_PROVIDER", "glm" if os.getenv("GLM_API_KEY") else "gemini"),
+        description="Supported values: gemini, glm",
+    )
+
+    GLM_API_KEY: SecretStr | None = Field(
+        default_factory=lambda: os.getenv("GLM_API_KEY"),
+        description="GLM API key",
+    )
+
+    GLM_BASE_URL: str = Field(
+        default=os.getenv("GLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"),
+        description="GLM OpenAI-compatible base URL",
+    )
+
+    GLM_MODEL: str = Field(
+        default=os.getenv("GLM_MODEL", "glm-4.5v"),
+        description="GLM vision-capable default model",
     )
 
     EPIC_EMAIL: str = Field(default_factory=lambda: os.getenv("EPIC_EMAIL"))
     EPIC_PASSWORD: SecretStr = Field(default_factory=lambda: os.getenv("EPIC_PASSWORD"))
     DISABLE_BEZIER_TRAJECTORY: bool = Field(default=True)
+
+    CHALLENGE_CLASSIFIER_MODEL: str = Field(
+        default_factory=lambda: os.getenv("CHALLENGE_CLASSIFIER_MODEL")
+        or os.getenv("GLM_MODEL")
+        or os.getenv("GEMINI_MODEL")
+        or "gemini-2.5-flash"
+    )
+    IMAGE_CLASSIFIER_MODEL: str = Field(
+        default_factory=lambda: os.getenv("IMAGE_CLASSIFIER_MODEL")
+        or os.getenv("GLM_MODEL")
+        or os.getenv("GEMINI_MODEL")
+        or "gemini-2.5-pro"
+    )
+    SPATIAL_POINT_REASONER_MODEL: str = Field(
+        default_factory=lambda: os.getenv("SPATIAL_POINT_REASONER_MODEL")
+        or os.getenv("GLM_MODEL")
+        or os.getenv("GEMINI_MODEL")
+        or "gemini-2.5-pro"
+    )
+    SPATIAL_PATH_REASONER_MODEL: str = Field(
+        default_factory=lambda: os.getenv("SPATIAL_PATH_REASONER_MODEL")
+        or os.getenv("GLM_MODEL")
+        or os.getenv("GEMINI_MODEL")
+        or "gemini-2.5-pro"
+    )
 
     cache_dir: Path = HCAPTCHA_DIR.joinpath(".cache")
     challenge_dir: Path = HCAPTCHA_DIR.joinpath(".challenge")
@@ -63,84 +105,4 @@ class EpicSettings(AgentConfig):
 
 settings = EpicSettings()
 settings.ignore_request_questions = ["Please drag the crossing to complete the lines"]
-
-# ==========================================
-# [方案一修复版] AiHubMix 终极补丁
-# ==========================================
-def _apply_aihubmix_patch():
-    if not settings.GEMINI_API_KEY:
-        return
-
-    try:
-        from google import genai
-        from google.genai import types
-        
-        # 1. 劫持 Client 初始化 (自动修正中转路径)
-        orig_init = genai.Client.__init__
-        def new_init(self, *args, **kwargs):
-            if hasattr(settings.GEMINI_API_KEY, 'get_secret_value'):
-                api_key = settings.GEMINI_API_KEY.get_secret_value()
-            else:
-                api_key = str(settings.GEMINI_API_KEY)
-            
-            kwargs['api_key'] = api_key
-            
-            base_url = settings.GEMINI_BASE_URL.rstrip('/')
-            if base_url.endswith('/v1'): base_url = base_url[:-3]
-            if not base_url.endswith('/gemini'): base_url = f"{base_url}/gemini"
-            
-            kwargs['http_options'] = types.HttpOptions(base_url=base_url)
-            logger.info(f"🚀 AiHubMix 补丁已应用 | 模型: {settings.GEMINI_MODEL} | 地址: {base_url}")
-            orig_init(self, *args, **kwargs)
-        
-        genai.Client.__init__ = new_init
-
-        # 2. 劫持文件上传 (绕过 400/403 错误，并修复 TypeError)
-        try:
-            file_cache = {}
-
-            # 自定义 helper，避免依赖 google 内部库
-            def _local_to_list(c):
-                return c if isinstance(c, list) else [c]
-
-            async def patched_upload(self_files, file, **kwargs):
-                if hasattr(file, 'read'): content = file.read()
-                elif isinstance(file, (str, Path)):
-                    with open(file, 'rb') as f: content = f.read()
-                else: content = bytes(file)
-                
-                if asyncio.iscoroutine(content): content = await content
-                
-                # 伪造文件上传，实际只存内存
-                file_id = f"bypass_{id(content)}"
-                file_cache[file_id] = content
-                return types.File(name=file_id, uri=file_id, mime_type="image/png")
-
-            orig_generate = genai.models.AsyncModels.generate_content
-            async def patched_generate(self_models, model, contents, **kwargs):
-                normalized = _local_to_list(contents)
-                
-                for content in normalized:
-                    if hasattr(content, 'parts'):
-                        for i, part in enumerate(content.parts):
-                            # 如果发现是我们伪造的文件 ID，立马替换成 Base64
-                            if part.file_data and part.file_data.file_uri in file_cache:
-                                data = file_cache[part.file_data.file_uri]
-                                content.parts[i] = types.Part.from_bytes(data=data, mime_type="image/png")
-                
-                # [核心修复点] 强制使用关键字参数 model= 和 contents=
-                # 这解决了 "takes 1 positional argument but 3 were given" 的报错
-                return await orig_generate(self_models, model=model, contents=normalized, **kwargs)
-
-            genai.files.AsyncFiles.upload = patched_upload
-            genai.models.AsyncModels.generate_content = patched_generate
-            logger.info("🚀 Base64 文件绕过补丁加载成功 (参数兼容版)")
-            
-        except Exception as ie:
-            logger.warning(f"⚠️ 文件绕过补丁依然失败: {ie}")
-
-    except Exception as e:
-        logger.error(f"❌ 严重：AiHubMix 补丁加载完全失败! 原因: {e}")
-
-# 执行补丁
-_apply_aihubmix_patch()
+apply_llm_patch(settings)
