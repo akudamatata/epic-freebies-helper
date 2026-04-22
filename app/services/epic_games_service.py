@@ -5,6 +5,7 @@
 # Description: 游戏商城控制句柄
 
 import json
+import time
 from contextlib import suppress
 from json import JSONDecodeError
 from typing import List
@@ -180,6 +181,41 @@ class EpicGames:
         self._promotions: List[PromotionGame] = []
 
     @staticmethod
+    async def _capture_purchase_debug(page: Page, reason: str, url: str):
+        stamp = int(time.time())
+        target = RUNTIME_DIR.joinpath("purchase_debug")
+        target.mkdir(parents=True, exist_ok=True)
+        safe_reason = reason.lower().replace(" ", "_")
+        await page.screenshot(path=target.joinpath(f"{safe_reason}-{stamp}.png"), full_page=True)
+        logger.info(f"Saved purchase debug screenshot - reason={reason} url={url}")
+
+    @staticmethod
+    async def _log_purchase_button_context(page: Page, purchase_btn, url: str):
+        btn_text = (await purchase_btn.text_content() or "").strip()
+        disabled = await purchase_btn.get_attribute("disabled")
+        aria_disabled = await purchase_btn.get_attribute("aria-disabled")
+        btn_class = await purchase_btn.get_attribute("class")
+        btn_testid = await purchase_btn.get_attribute("data-testid")
+        container_text = ""
+
+        with suppress(Exception):
+            container = purchase_btn.locator("xpath=ancestor::*[self::section or self::aside or self::div][1]")
+            container_text = (await container.text_content() or "").strip()
+            container_text = " ".join(container_text.split())[:800]
+
+        logger.debug(
+            "Purchase button context | url={} | text='{}' | disabled={} | aria-disabled={} | testid={} | class={} | container='{}'",
+            url,
+            btn_text,
+            disabled,
+            aria_disabled,
+            btn_testid,
+            btn_class,
+            container_text,
+        )
+        return btn_text, container_text, disabled, aria_disabled
+
+    @staticmethod
     async def _agree_license(page: Page):
         logger.debug("Agree license")
         with suppress(TimeoutError):
@@ -258,6 +294,15 @@ class EpicGames:
 
     async def add_promotion_to_cart(self, page: Page, urls: List[str]) -> bool:
         has_pending_cart_items = False
+        owned_markers = [
+            "IN LIBRARY",
+            "OWNED",
+            "ALREADY OWNED",
+            "UNAVAILABLE",
+            "COMING SOON",
+            "IN YOUR LIBRARY",
+            "OWN THIS GAME",
+        ]
 
         for url in urls:
             await page.goto(url, wait_until="load")
@@ -288,25 +333,35 @@ class EpicGames:
             try:
                 if not await purchase_btn.is_visible(timeout=5000):
                     # 再次检查是否在库中 (有时按钮不叫 purchase-cta，而是简单的 disabled button)
-                    all_text = await page.locator("body").text_content()
-                    if "In Library" in all_text or "Owned" in all_text:
+                    all_text = (await page.locator("body").text_content() or "").upper()
+                    if any(marker in all_text for marker in owned_markers):
                          logger.success(f"Already in the library (Page Text Scan) - {url=}")
                          continue
                     logger.warning(f"Could not find any purchase button - {url=}")
+                    await self._capture_purchase_debug(page, "button_missing", url)
                     continue
             except Exception:
                 pass
 
-            # 3. 获取按钮文字
-            btn_text = await purchase_btn.text_content()
-            if not btn_text: btn_text = ""
-            btn_text_upper = btn_text.strip().upper()
+            # 3. 获取按钮上下文
+            btn_text, container_text, disabled, aria_disabled = await self._log_purchase_button_context(
+                page, purchase_btn, url
+            )
+            btn_text_upper = btn_text.upper()
+            container_text_upper = container_text.upper()
             
             logger.debug(f"👉 Found Button: '{btn_text}'")
 
             # 4. 黑名单检查：只有这些情况绝对不能点
             # 如果是 'IN LIBRARY', 'OWNED', 'UNAVAILABLE', 'COMING SOON' -> 跳过
-            if any(s in btn_text_upper for s in ["IN LIBRARY", "OWNED", "UNAVAILABLE", "COMING SOON"]):
+            if disabled is not None or aria_disabled == "true":
+                logger.success(f"Purchase button disabled - Skipping. {url=}")
+                await self._capture_purchase_debug(page, "button_disabled", url)
+                continue
+
+            if any(marker in btn_text_upper for marker in owned_markers) or any(
+                marker in container_text_upper for marker in owned_markers
+            ):
                 logger.success(f"Game status is '{btn_text}' - Skipping.")
                 continue
 
@@ -322,7 +377,15 @@ class EpicGames:
             # 只要不是黑名单，也不是购物车，统统当做 "Get/Purchase" 直接点击！
             # 不管它写的是 'Get', 'Free', 'Purchase', 'Buy Now'，只要 API 说是免费的，我们就点！
             logger.debug(f"⚡️ Logic: Aggressive Click (Text: {btn_text}) - {url=}")
-            await purchase_btn.click()
+            try:
+                await purchase_btn.click(timeout=10000)
+            except TimeoutError:
+                logger.warning(f"Standard click timed out, retrying with force click - {url=}")
+                await self._capture_purchase_debug(page, "click_timeout", url)
+                await purchase_btn.click(force=True, timeout=10000)
+            except Exception:
+                await self._capture_purchase_debug(page, "click_failed", url)
+                raise
             
             # 点击后，转入即时结账流程
             await self._handle_instant_checkout(page)
