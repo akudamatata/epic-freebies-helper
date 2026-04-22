@@ -196,28 +196,42 @@ class EpicGames:
         logger.info(f"Saved purchase debug screenshot - reason={reason} url={url}")
 
     @staticmethod
-    async def _handle_device_not_supported_modal(page: Page, url: str) -> bool:
-        modal_text = page.locator("text=Device not supported").first
-        continue_btn = page.locator("//button[.//span[text()='Continue'] or normalize-space(text())='Continue']").first
+    async def _handle_device_not_supported_modal(page: Page, url: str, timeout_ms: int = 8000) -> bool:
+        modal_text = page.get_by_text("Device not supported", exact=False).first
+        continue_btn = page.locator(
+            "//button[.//span[contains(normalize-space(.), 'Continue')] "
+            "or contains(normalize-space(.), 'Continue')]"
+        ).last
+        elapsed = 0
 
-        try:
-            if not await modal_text.is_visible(timeout=5000):
-                return False
-        except Exception:
-            return False
+        while elapsed < timeout_ms:
+            try:
+                body_text = (await page.locator("body").text_content() or "").upper()
+                modal_visible = await modal_text.is_visible(timeout=500)
+            except Exception:
+                body_text = ""
+                modal_visible = False
 
-        logger.warning(f"Device not supported modal detected - attempting to continue. {url=}")
-        await EpicGames._capture_purchase_debug(page, "device_not_supported", url)
+            if modal_visible or "DEVICE NOT SUPPORTED" in body_text:
+                logger.warning(f"Device not supported modal detected - attempting to continue. {url=}")
+                await EpicGames._capture_purchase_debug(page, "device_not_supported", url)
 
-        try:
-            await continue_btn.click(timeout=5000)
-            await page.wait_for_timeout(2000)
-            logger.success("Dismissed device not supported modal")
-            return True
-        except Exception as err:
-            logger.warning(f"Failed to dismiss device not supported modal: {err}")
-            await EpicGames._capture_purchase_debug(page, "device_not_supported_click_failed", url)
-            return False
+                try:
+                    await continue_btn.click(timeout=3000, force=True)
+                    await page.wait_for_timeout(2500)
+                    logger.success("Dismissed device not supported modal")
+                    return True
+                except Exception as err:
+                    logger.warning(f"Failed to dismiss device not supported modal: {err}")
+                    await EpicGames._capture_purchase_debug(
+                        page, "device_not_supported_click_failed", url
+                    )
+                    return False
+
+            await page.wait_for_timeout(500)
+            elapsed += 500
+
+        return False
 
     @staticmethod
     async def _log_purchase_button_context(page: Page, purchase_btn, url: str):
@@ -324,6 +338,7 @@ class EpicGames:
             await self._capture_purchase_debug(page, "instant_checkout_warning", page.url)
             with suppress(Exception):
                 logger.debug(f"Instant checkout fallback | current_url={page.url}")
+            await self._handle_device_not_supported_modal(page, page.url)
             try:
                 await page.reload(timeout=10000)
             except Exception as reload_err:
