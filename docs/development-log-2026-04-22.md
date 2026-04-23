@@ -2,6 +2,11 @@
 
 这份文档是从原始 Codex 会话提取出来的开发纪要，目的是把一整天的排障、修复和文档整理过程压缩成可读版本。
 
+语言版本：
+
+- 简体中文（当前页）
+- [English](development-log-2026-04-22.en.md)
+
 原始记录仍然保留在仓库里：
 
 - [`codex-records/epic-awesome-gamer-rollout-2026-04-22.jsonl`](../codex-records/epic-awesome-gamer-rollout-2026-04-22.jsonl)

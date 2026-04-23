@@ -11,6 +11,14 @@
   </p>
 </div>
 
+文档语言：
+
+- 简体中文（当前页）
+- [English README](README.en.md)
+- [English Advanced Guide](docs/advanced.en.md)
+- [English Development Log (2026-04-22)](docs/development-log-2026-04-22.en.md)
+- [English GitHub Actions Guide](.github/workflows/README.en.md)
+
 面向普通用户的 Epic 周免自动领取项目，默认通过 GitHub Actions 运行，不需要服务器或本地常驻环境；只要有 GitHub 账号，就可以直接开始。
 
 本项目基于社区开源方案持续完善，并接入了国产 `GLM` 多模态模型。实测可稳定处理登录、验证码和领取流程；对于不方便注册 Google AI Studio、难以使用 Gemini API 的用户，GLM 路线更省心，`0` 成本即可跑通。
@@ -228,6 +236,7 @@ docker compose up -d --build
 如果你想看项目结构、适配细节、开发者排障记录和这次踩过的坑，请继续阅读：
 
 - [开发者进阶文档](docs/advanced.md)
+- [Advanced Guide (English)](docs/advanced.en.md)
 
 ---
 

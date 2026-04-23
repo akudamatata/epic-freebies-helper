@@ -2,10 +2,17 @@
 
 这份文档面向想继续改项目、提 PR、或者自己二次开发的读者。
 
+语言版本：
+
+- 简体中文（当前页）
+- [English](advanced.en.md)
+
 如果你只是想配置并使用项目，请先看：
 
 - [README](../README.md)
 - [2026-04-22 开发纪要](development-log-2026-04-22.md)
+- [README (English)](../README.en.md)
+- [Development Log (English)](development-log-2026-04-22.en.md)
 
 ---
 

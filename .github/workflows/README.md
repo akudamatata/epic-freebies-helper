@@ -1,6 +1,11 @@
 # GitHub Actions 使用说明
 
-当前仓库已经内置 [`.github/workflows/epic-gamer.yml`](/Users/ronchy2000/Documents/Developer/Workshop/epic-awesome-gamer/.github/workflows/epic-gamer.yml)，推荐直接使用它来定时执行。
+语言版本：
+
+- 简体中文（当前页）
+- [English](README.en.md)
+
+当前仓库已经内置 [`.github/workflows/epic-gamer.yml`](epic-gamer.yml)，推荐直接使用它来定时执行。
 
 ## 工作流做了什么
 
