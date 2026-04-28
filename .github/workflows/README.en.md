@@ -7,6 +7,8 @@ Language versions:
 
 The repository already includes [`.github/workflows/epic-gamer.yml`](epic-gamer.yml). Using it directly is the recommended way to run scheduled claims.
 
+The default schedule is now once per week: `Thursday 23:20 China Standard Time` (`UTC 15:20` in GitHub cron). That puts the run after the weekly Epic refresh, which is a better default for most users.
+
 ## What the Workflow Does
 
 The workflow runs the following steps on a GitHub-hosted runner:
@@ -20,6 +22,14 @@ The workflow runs the following steps on a GitHub-hosted runner:
 7. Run `uv run app/deploy.py` inside `xvfb`.
 
 The workflow is triggered by GitHub `schedule` and `workflow_dispatch`. APScheduler inside the repository is disabled in this mode to avoid duplicate scheduling.
+
+## Default Schedule
+
+- Default schedule: once every Thursday
+- GitHub cron: `20 15 * * 4`
+- Time: `Thursday 15:20 UTC` / `Thursday 23:20 China Standard Time`
+
+If you want a different time, edit the `schedule` section inside [`.github/workflows/epic-gamer.yml`](epic-gamer.yml). The easiest way is to open that file on GitHub, click the pencil icon, update the cron line, and commit the change.
 
 ## Required Secrets
 
@@ -133,6 +143,8 @@ Example log for a 429 rate-limit case:
 
 ![GLM 429 rate limit log](../../docs/images/faq/glm-429-rate-limit.png)
 
-### 4. Why run daily instead of weekly?
+### 4. Why is the default schedule weekly now?
 
-Running once per day is safer on GitHub Actions. The script itself decides whether there is any new weekly free content and exits quickly when there is nothing to claim.
+Epic weekly freebies usually refresh on Thursday. For most regular users, running once after the refresh is a better default: it uses fewer GitHub Actions minutes and matches the real claim cycle more closely.
+
+If you prefer more redundancy, you can still edit the workflow and run it multiple times per week, or keep using manual `Run workflow` as a fallback.

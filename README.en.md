@@ -40,7 +40,7 @@ If you run into an error, please feel free to open an [Issue](https://github.com
 | Weekly freebies discovery | Fetches and identifies currently claimable free titles |
 | Auto claim | Opens product pages and completes the checkout flow |
 | Captcha handling | Supports login captcha and checkout security checks |
-| Scheduled execution | Can run directly on GitHub Actions |
+| Scheduled execution | Runs once every Thursday by default on GitHub Actions and can be adjusted |
 
 ---
 

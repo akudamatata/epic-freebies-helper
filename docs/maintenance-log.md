@@ -13,6 +13,28 @@
 
 ## 2026-04-27
 
+## 2026-04-28
+
+### 默认 GitHub Actions 调度改为每周一次
+
+- 现象：
+  - 之前 workflow 默认是每天运行一次。
+  - 对大多数普通用户来说，这个频率偏高，不符合 Epic 周免按周刷新的节奏，也会额外消耗 GitHub Actions 分钟数。
+- 根因判断：
+  - 默认 schedule 更适合放在 Epic 周免刷新之后，并按周执行。
+  - 同时需要在文档里明确告诉用户：如果他们想改成别的时间，应直接修改 workflow 里的 cron。
+- 改动文件：
+  - `.github/workflows/epic-gamer.yml`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `README.md`
+  - `README.en.md`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 默认 GitHub Actions 调度改为 `20 15 * * 4`，对应 `UTC 周四 15:20` / `北京时间周四 23:20`。
+  - 将“为什么默认按周跑”“如何自己改 cron”写入中英文 GitHub Actions 文档。
+  - 在中英文 README 的功能概览中同步说明默认是每周四运行一次，并支持自行调整。
+
 ### Device not supported 弹窗再次导致领取失败
 
 - 现象：

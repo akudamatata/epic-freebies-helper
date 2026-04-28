@@ -7,6 +7,8 @@
 
 当前仓库已经内置 [`.github/workflows/epic-gamer.yml`](epic-gamer.yml)，推荐直接使用它来定时执行。
 
+默认定时已经改成每周一次：`北京时间周四 23:20`（GitHub cron 使用 `UTC 15:20`）。这个时间点放在 Epic 周免刷新之后，更适合作为默认设置。
+
 ## 工作流做了什么
 
 这个工作流会在 GitHub Hosted Runner 上完成以下步骤：
@@ -20,6 +22,14 @@
 7. 在 `xvfb` 环境中运行 `uv run app/deploy.py`。
 
 它默认由 GitHub 的 `schedule` 和 `workflow_dispatch` 触发，仓库内的 APScheduler 会被关闭，避免重复调度。
+
+## 默认运行时间
+
+- 默认 schedule：每周四一次
+- GitHub cron：`20 15 * * 4`
+- 对应时间：`UTC 周四 15:20` / `北京时间周四 23:20`
+
+如果你想改成自己的时间，直接编辑 [`.github/workflows/epic-gamer.yml`](epic-gamer.yml) 里的 `schedule` 即可。最方便的方式是在 GitHub 网页里打开这个文件，点右上角铅笔按钮，修改 `cron` 后提交。
 
 ## Secrets 配置
 
@@ -131,9 +141,11 @@ GitHub 的共享出口 IP 可能被 Epic 风控。通常换个时间重新执行
 
 ![GLM 429 rate limit log](../../docs/images/faq/glm-429-rate-limit.png)
 
-### 4. 为什么每天跑一次而不是每周跑一次
+### 4. 为什么现在默认改成每周一次
 
-GitHub Actions 每天跑一次更稳妥。脚本内部会判断是否有新的周免内容，没有的话会直接结束。
+Epic 周免通常在每周四刷新。对大多数普通用户来说，把默认 schedule 放在周免刷新之后、每周跑一次，更省配额，也更符合实际使用习惯。
+
+如果你更看重容错，也可以自己改成每周多跑几次，或者保留手动触发 `Run workflow` 作为补充。
 
 ## 如何提 issue 才方便排查
 
