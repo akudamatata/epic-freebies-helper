@@ -471,3 +471,20 @@
   - 购买按钮点击前后都会检测并尝试关闭设备不兼容弹窗。
   - `_has_purchase_progress()` 不再把该弹窗本身视为有效购买进展。
   - `_combined_text()` / `_frame_texts()` 支持传入短超时，设备弹窗检测使用 500ms 主页面文本读取和 300ms frame 文本读取。
+
+### 2026-05-05 GLM 框坐标导致 hCaptcha 点选解析失败
+
+- 现象：
+  - 登录 hCaptcha `image_label_multi_select` / `image_label_area_select` 流程中，GLM 返回 `{"answer":[[x_min,y_min,x_max,y_max], ...]}`。
+  - `ImageAreaSelectChallenge` 校验时报 `points.*.x` / `points.*.y` 缺失，最终触发 `RetryError`。
+- 根因判断：
+  - 上游 `ImageAreaSelectChallenge.points` 只接受点击点坐标 `{"x": ..., "y": ...}`。
+  - GLM 兼容层只要求模型返回 JSON，模型可能用视觉检测常见的框坐标格式回答。
+  - 适配层已经识别了框坐标，但错误地把 `x_min/y_min/x_max/y_max` 原样塞入 `points`。
+- 改动文件：
+  - `app/extensions/llm_adapter.py`
+  - `tests/test_glm_adapter.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - GLM 返回框坐标时，适配层会转成矩形中心点击点后再构造 `ImageAreaSelectChallenge`。
+  - 增加回归测试覆盖数组框坐标和对象框坐标两种返回格式。
