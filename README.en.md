@@ -92,6 +92,7 @@ Required in all cases:
 If you use `GLM`, start with this set:
 
 **If you plan to use `GLM_API_KEY`, make sure the related Zhipu account has already passed real-name verification, or the API may remain unavailable.**
+**If you set `LLM_PROVIDER=glm`, you must also provide `GLM_API_KEY`; do not leave `GLM_API_KEY` empty while only filling `GEMINI_API_KEY`.**
 
 | Secret | Example value |
 | --- | --- |
@@ -106,6 +107,8 @@ Configuration page example:
 ![GitHub Actions Secrets example](docs/images/tutorial/step2-actions-secrets.png)
 
 If you use the `official Gemini API`, use this set:
+
+**If you set `LLM_PROVIDER=gemini`, you must also provide `GEMINI_API_KEY`; do not leave `GEMINI_API_KEY` empty while only filling `GLM_API_KEY`.**
 
 | Secret | Example value |
 | --- | --- |
@@ -127,6 +130,8 @@ Notes:
 
 - The current codebase supports both the `official Gemini API` and Gemini-compatible relays such as `AiHubMix`.
 - The variable name is `GEMINI_BASE_URL`, not `GEMINI_BASE_MODEL`.
+- When `LLM_PROVIDER=glm`, fill `GLM_API_KEY`; when `LLM_PROVIDER=gemini`, fill `GEMINI_API_KEY`.
+- Do not use a mismatched setup such as `LLM_PROVIDER=glm` with an empty `GLM_API_KEY` and only `GEMINI_API_KEY`, or `LLM_PROVIDER=gemini` with only `GLM_API_KEY`.
 - When you use the `official Gemini API`, leave `GEMINI_BASE_URL` empty so the SDK uses Google's default endpoint.
 - Only set `GEMINI_BASE_URL` when you use `AiHubMix` or another Gemini-compatible relay.
 - For `GLM`, `glm-4.6v` is the recommended starting value; `glm-4.6v-flash` can fail during peak traffic.

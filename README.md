@@ -91,7 +91,7 @@ Fork 之后先打开自己仓库的 `Actions` 页面，进入 `Epic Awesome Game
 
 如果你使用 `GLM`，建议先按下面这组填写：
 
-**如果你使用 `GLM_API_KEY`，请先确认对应智谱账号已经完成实名认证，否则 API 很可能不可用。**
+**如果你把 `LLM_PROVIDER` 设为 `glm`，就必须填写 `GLM_API_KEY`；无需填写 `GEMINI_API_KEY`**
 
 | Secret | 示例值 |
 | --- | --- |
@@ -106,6 +106,8 @@ Fork 之后先打开自己仓库的 `Actions` 页面，进入 `Epic Awesome Game
 ![GitHub Actions Secrets 配置示例](docs/images/tutorial/step2-actions-secrets.png)
 
 如果你使用 `Gemini 官方接口`，请按下面这组填写：
+
+**如果你把 `LLM_PROVIDER` 设为 `gemini`，就必须填写 `GEMINI_API_KEY`；不要只填 `GLM_API_KEY` 后仍把 provider 设成 `gemini`。**
 
 | Secret | 示例值 |
 | --- | --- |
@@ -127,6 +129,8 @@ Fork 之后先打开自己仓库的 `Actions` 页面，进入 `Epic Awesome Game
 
 - 当前代码同时支持 `Gemini 官方接口` 和 `AiHubMix` 这类 Gemini 兼容接口。
 - 变量名是 `GEMINI_BASE_URL`，不是 `GEMINI_BASE_MODEL`。
+- `LLM_PROVIDER=glm` 时，请填写 `GLM_API_KEY`；`LLM_PROVIDER=gemini` 时，请填写 `GEMINI_API_KEY`。
+- 不要出现这种错配：`LLM_PROVIDER=glm` 但 `GLM_API_KEY` 留空，只填了 `GEMINI_API_KEY`；或者 `LLM_PROVIDER=gemini` 但只填了 `GLM_API_KEY`。
 - 使用 `Gemini 官方接口` 时，`GEMINI_BASE_URL` 应留空，让 SDK 直接走 Google 官方默认地址。
 - 使用 `AiHubMix` 或其他 Gemini 兼容中转接口时，再填写对应的 `GEMINI_BASE_URL`。
 - 对 `GLM` 路线，推荐把 `GLM_MODEL` 设为 `glm-4.6v`；`glm-4.6v-flash` 在高峰期可能报“该模型当前访问量过大，请您稍后重试”。

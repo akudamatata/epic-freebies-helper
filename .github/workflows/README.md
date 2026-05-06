@@ -42,6 +42,8 @@
 
 如果你使用 Gemini 官方接口：
 
+`LLM_PROVIDER=gemini` 时，必须填写 `GEMINI_API_KEY`。
+
 | Secret | 说明 |
 | --- | --- |
 | `LLM_PROVIDER` | 建议设为 `gemini` |
@@ -50,6 +52,8 @@
 | `GEMINI_MODEL` | 可选，默认 `gemini-2.5-pro` |
 
 如果你使用 AiHubMix 这类 Gemini 兼容中转接口：
+
+`LLM_PROVIDER=gemini` 时，必须填写 `GEMINI_API_KEY`。
 
 | Secret | 说明 |
 | --- | --- |
@@ -60,6 +64,8 @@
 
 如果你使用 GLM：
 
+`LLM_PROVIDER=glm` 时，必须填写 `GLM_API_KEY`。
+
 | Secret | 说明 |
 | --- | --- |
 | `LLM_PROVIDER` | 建议设为 `glm` |
@@ -68,6 +74,7 @@
 | `GLM_MODEL` | 可选，推荐 `glm-4.6v` |
 
 `GLM` 路线不需要额外配置 `GEMINI_API_KEY`。项目会在兼容层里自动桥接底层依赖仍然要求的字段。
+不要把 `LLM_PROVIDER` 和 API key 填错位：例如 `LLM_PROVIDER=glm` 却只填了 `GEMINI_API_KEY`，或者 `LLM_PROVIDER=gemini` 却只填了 `GLM_API_KEY`。这种情况下工作流会直接报配置错误。
 
 程序会优先读取这些模型覆盖项，如果未设置，则自动回落到 `GLM_MODEL` 或 `GEMINI_MODEL`：
 

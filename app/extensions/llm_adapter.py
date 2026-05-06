@@ -985,6 +985,18 @@ def apply_glm_patch(settings: Any):
 def apply_llm_patch(settings: Any):
     provider = settings.LLM_PROVIDER.lower()
     if provider == "glm":
+        if not settings.GLM_API_KEY:
+            logger.error(
+                "LLM provider misconfigured | LLM_PROVIDER=glm but GLM_API_KEY is empty"
+            )
+            return
         apply_glm_patch(settings)
         return
+
+    if provider == "gemini" and not settings.GEMINI_API_KEY:
+        logger.error(
+            "LLM provider misconfigured | LLM_PROVIDER=gemini but GEMINI_API_KEY is empty"
+        )
+        return
+
     apply_gemini_patch(settings)

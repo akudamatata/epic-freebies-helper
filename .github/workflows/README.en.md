@@ -42,6 +42,8 @@ Required in all cases:
 
 If you use the official Gemini API:
 
+When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`.
+
 | Secret | Description |
 | --- | --- |
 | `LLM_PROVIDER` | Recommended value: `gemini` |
@@ -50,6 +52,8 @@ If you use the official Gemini API:
 | `GEMINI_MODEL` | Optional, defaults to `gemini-2.5-pro` |
 
 If you use a Gemini-compatible relay such as AiHubMix:
+
+When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`.
 
 | Secret | Description |
 | --- | --- |
@@ -60,6 +64,8 @@ If you use a Gemini-compatible relay such as AiHubMix:
 
 If you use GLM:
 
+When `LLM_PROVIDER=glm`, you must fill `GLM_API_KEY`.
+
 | Secret | Description |
 | --- | --- |
 | `LLM_PROVIDER` | Recommended value: `glm` |
@@ -68,6 +74,7 @@ If you use GLM:
 | `GLM_MODEL` | Optional, recommended: `glm-4.6v` |
 
 The `GLM` path does not require a separate `GEMINI_API_KEY`. The project now bridges that lower-level compatibility requirement automatically.
+Do not mismatch the provider and the key: for example, `LLM_PROVIDER=glm` with only `GEMINI_API_KEY`, or `LLM_PROVIDER=gemini` with only `GLM_API_KEY`. The workflow now stops early and reports that configuration error directly.
 
 The program also checks these per-task overrides first. If they are not set, they fall back automatically to `GLM_MODEL` or `GEMINI_MODEL`:
 

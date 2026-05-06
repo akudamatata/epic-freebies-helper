@@ -488,3 +488,40 @@
 - 处理结果：
   - GLM 返回框坐标时，适配层会转成矩形中心点击点后再构造 `ImageAreaSelectChallenge`。
   - 增加回归测试覆盖数组框坐标和对象框坐标两种返回格式。
+
+### 2026-05-06 GLM/Gemini provider 错配导致登录验证码走错接口
+
+- 现象：
+  - 某些 workflow 日志里已经明确打印 `LLM_PROVIDER=glm`，但运行配置同时出现 `GLM_API_KEY=null`、`GEMINI_API_KEY=**********`。
+  - 登录验证码阶段没有直接报出 provider 配置错误，而是继续进入 Gemini 上传接口，最终在 `generativelanguage.googleapis.com/upload/v1beta/files` 处报 `API_KEY_INVALID`。
+  - 用户看到的是深层 `RetryError` / `ClientError` 栈追踪，不容易判断根因其实是 provider 与 API key 配置不一致。
+- 根因判断：
+  - 代码此前允许 `LLM_PROVIDER=glm` 与空 `GLM_API_KEY` 一起继续启动。
+  - 在这种错配下，GLM 兼容补丁不会生效，但 `hcaptcha-challenger` 仍可能继续使用 `GEMINI_API_KEY` 路径，导致错误表象落在 Gemini/Google 接口上。
+- 改动文件：
+  - `app/settings.py`
+  - `app/extensions/llm_adapter.py`
+  - `app/deploy.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 增加 `llm_configuration_error` 统一判断显式 provider 与对应 API key 是否匹配。
+  - `apply_llm_patch()` 在 provider 显式错配时会先打出明确日志，不再静默跳过。
+  - `deploy()` 在浏览器启动前就会直接终止这类配置错误，并给出清晰提示：`LLM_PROVIDER=glm` 必须配置 `GLM_API_KEY`，`LLM_PROVIDER=gemini` 必须配置 `GEMINI_API_KEY`。
+
+### 2026-05-06 在主文档和 workflow 文档中明确 provider 与 API key 必须一一对应
+
+- 现象：
+  - README 和 workflow 文档虽然分别给了 `GLM`、`Gemini`、`AiHubMix` 的示例，但没有把“`LLM_PROVIDER` 必须和实际填写的那组 API key 对应”写得足够直白。
+  - 用户可能会误以为只要填了任意一组 key 即可，例如把 `LLM_PROVIDER=glm` 和 `GEMINI_API_KEY` 混在一起使用。
+- 根因判断：
+  - 现有文档强调了 `GLM` 路线“不需要额外配置 `GEMINI_API_KEY`”，但没有同步强调反向约束：显式选择哪个 provider，就必须填写该 provider 对应的 key。
+- 改动文件：
+  - `README.md`
+  - `README.en.md`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `.env.example`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 在中英文 README 和 workflow 文档中增加显式规则与错配示例。
+  - 在 `.env.example` 里增加注释，直接说明 `LLM_PROVIDER=glm -> GLM_API_KEY`、`LLM_PROVIDER=gemini -> GEMINI_API_KEY`。

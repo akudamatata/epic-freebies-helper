@@ -101,6 +101,10 @@ async def deploy():
         f"Starting deployment with configuration: {json.dumps(sj, indent=2, ensure_ascii=False)}"
     )
 
+    if configuration_error := settings.llm_configuration_error:
+        logger.error(configuration_error)
+        raise RuntimeError(configuration_error)
+
     # Execute an immediate collection task
     await execute_browser_tasks(headless=headless)
 

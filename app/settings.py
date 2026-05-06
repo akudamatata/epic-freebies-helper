@@ -158,6 +158,26 @@ class EpicSettings(AgentConfig):
         target_.mkdir(parents=True, exist_ok=True)
         return target_
 
+    @property
+    def llm_configuration_error(self) -> str | None:
+        provider = (self.LLM_PROVIDER or "").strip().lower()
+
+        if provider == "glm" and self.GLM_API_KEY is None:
+            return (
+                "Invalid LLM configuration: LLM_PROVIDER=glm but GLM_API_KEY is empty. "
+                "Set GLM_API_KEY in GitHub Actions Secrets, or switch LLM_PROVIDER to gemini "
+                "if you intend to use Gemini/AiHubMix."
+            )
+
+        if provider == "gemini" and self.GEMINI_API_KEY is None:
+            return (
+                "Invalid LLM configuration: LLM_PROVIDER=gemini but GEMINI_API_KEY is empty. "
+                "Set GEMINI_API_KEY in GitHub Actions Secrets, or switch LLM_PROVIDER to glm "
+                "if you intend to use GLM."
+            )
+
+        return None
+
 
 settings = EpicSettings()
 settings.ignore_request_questions = ["Please drag the crossing to complete the lines"]
