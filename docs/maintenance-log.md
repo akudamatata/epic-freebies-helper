@@ -525,3 +525,40 @@
 - 处理结果：
   - 在中英文 README 和 workflow 文档中增加显式规则与错配示例。
   - 在 `.env.example` 里增加注释，直接说明 `LLM_PROVIDER=glm -> GLM_API_KEY`、`LLM_PROVIDER=gemini -> GEMINI_API_KEY`。
+
+### 2026-05-06 将 provider 配置提示收敛成直接句式
+
+- 现象：
+  - 上一版文档已经补上 provider 与 key 的对应关系，但有些位置仍然通过“不要这样错配”的反例来解释。
+  - 这类规则对普通用户更适合写成单句指令，而不是先讲错法再反推对法。
+- 根因判断：
+  - 配置型文档越接近“照着填”越不容易出错，应该直接告诉用户“选这个 provider，就只填这一组 key”。
+- 改动文件：
+  - `README.md`
+  - `README.en.md`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `.env.example`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 将中英文主文档和 workflow 文档统一改成直接句式：
+    - `LLM_PROVIDER=glm` -> 填 `GLM_API_KEY`，无需填 `GEMINI_API_KEY`
+    - `LLM_PROVIDER=gemini` -> 填 `GEMINI_API_KEY`，无需填 `GLM_API_KEY`
+
+### 2026-05-06 将“无需填写”进一步明确成“无需新建并填写”
+
+- 现象：
+  - 即使写成了“无需填写另一组 key”，部分用户仍可能理解成“要先新建一个空的 Secret，只是不填值”。
+- 根因判断：
+  - 这类 GitHub Secrets 说明需要把“无需新建”也说清楚，否则普通用户容易把空 Secret 当成必要步骤。
+- 改动文件：
+  - `README.md`
+  - `README.en.md`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `.env.example`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 将中英文文档进一步统一为：
+    - `LLM_PROVIDER=glm` -> 填 `GLM_API_KEY`，无需新建并填写 `GEMINI_API_KEY`
+    - `LLM_PROVIDER=gemini` -> 填 `GEMINI_API_KEY`，无需新建并填写 `GLM_API_KEY`

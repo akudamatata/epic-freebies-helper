@@ -42,7 +42,7 @@ Required in all cases:
 
 If you use the official Gemini API:
 
-When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`.
+When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`; there is no need to create or fill `GLM_API_KEY`.
 
 | Secret | Description |
 | --- | --- |
@@ -53,7 +53,7 @@ When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`.
 
 If you use a Gemini-compatible relay such as AiHubMix:
 
-When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`.
+When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`; there is no need to create or fill `GLM_API_KEY`.
 
 | Secret | Description |
 | --- | --- |
@@ -64,7 +64,7 @@ When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`.
 
 If you use GLM:
 
-When `LLM_PROVIDER=glm`, you must fill `GLM_API_KEY`.
+When `LLM_PROVIDER=glm`, you must fill `GLM_API_KEY`; there is no need to create or fill `GEMINI_API_KEY`.
 
 | Secret | Description |
 | --- | --- |
@@ -73,7 +73,7 @@ When `LLM_PROVIDER=glm`, you must fill `GLM_API_KEY`.
 | `GLM_BASE_URL` | Optional, defaults to `https://open.bigmodel.cn/api/paas/v4` |
 | `GLM_MODEL` | Optional, recommended: `glm-4.6v` |
 
-The `GLM` path does not require a separate `GEMINI_API_KEY`. The project now bridges that lower-level compatibility requirement automatically.
+For the `GLM` path, fill only `GLM_API_KEY`. For the `Gemini / AiHubMix` path, fill only `GEMINI_API_KEY`. There is no need to create or fill the other key. If the provider and key do not match, the workflow stops early and reports that configuration error directly.
 Do not mismatch the provider and the key: for example, `LLM_PROVIDER=glm` with only `GEMINI_API_KEY`, or `LLM_PROVIDER=gemini` with only `GLM_API_KEY`. The workflow now stops early and reports that configuration error directly.
 
 The program also checks these per-task overrides first. If they are not set, they fall back automatically to `GLM_MODEL` or `GEMINI_MODEL`:
